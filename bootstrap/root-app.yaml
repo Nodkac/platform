@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOU/platform-gitops   # ← your username
+    repoURL: https://github.com/Nodkac/platform-gitops
     targetRevision: main
     path: apps       # deploy EVERY yaml file in this folder
   destination:
