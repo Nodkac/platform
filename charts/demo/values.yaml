@@ -1,0 +1,42 @@
+# These values fill the blanks in the templates.
+# Change a value here → change how the app is deployed.
+
+replicaCount: 2
+
+image:
+  repository: demo
+  tag: dev
+  pullPolicy: IfNotPresent   # don't try to download; use the image we imported
+
+serviceAccount:
+  create: true
+  name: ""
+
+service:
+  type: ClusterIP   # reachable inside the cluster only, which is what we want for now
+  port: 8080
+
+# requests = what the scheduler reserves for this pod
+# limits   = the hard ceiling before it gets throttled or killed
+# Missing requests is the #1 cause of pods that won't schedule.
+resources:
+  requests:
+    cpu: 50m        # 50 millicores = 5% of one CPU core
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Kyverno enforces all of this in Phase 4. Build it right now.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
