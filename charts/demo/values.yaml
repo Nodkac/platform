@@ -1,7 +1,7 @@
 # These values fill the blanks in the templates.
 # Change a value here → change how the app is deployed.
 
-replicaCount: 2
+replicaCount: 3
 
 image:
   repository: demo
