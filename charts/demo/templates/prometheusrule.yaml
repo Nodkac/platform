@@ -1,0 +1,60 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "demo.fullname" . }}-slo
+  labels:
+    {{- include "demo.labels" . | nindent 4 }}
+spec:
+  groups:
+    # Precompute the error ratio over four time windows.
+    - name: demo-slo-recording
+      interval: 30s
+      rules:
+        - record: demo:error_ratio:rate5m
+          expr: |
+            sum(rate(http_requests_total{job="demo",code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="demo"}[5m]))
+        - record: demo:error_ratio:rate30m
+          expr: |
+            sum(rate(http_requests_total{job="demo",code=~"5.."}[30m]))
+            /
+            sum(rate(http_requests_total{job="demo"}[30m]))
+        - record: demo:error_ratio:rate1h
+          expr: |
+            sum(rate(http_requests_total{job="demo",code=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total{job="demo"}[1h]))
+        - record: demo:error_ratio:rate6h
+          expr: |
+            sum(rate(http_requests_total{job="demo",code=~"5.."}[6h]))
+            /
+            sum(rate(http_requests_total{job="demo"}[6h]))
+
+    - name: demo-slo-alerts
+      rules:
+        # 14.4 x 0.005 = 0.072, i.e. a 7.2% error rate
+        - alert: DemoFastBurn
+          expr: |
+            demo:error_ratio:rate1h > (14.4 * 0.005)
+            and
+            demo:error_ratio:rate5m > (14.4 * 0.005)
+          for: 2m
+          labels:
+            severity: page
+          annotations:
+            summary: "Fast error-budget burn on demo (14.4x)"
+            description: "At this rate the 30-day error budget is exhausted in ~2 days."
+
+        # 6 x 0.005 = 0.03, i.e. a 3% error rate
+        - alert: DemoSlowBurn
+          expr: |
+            demo:error_ratio:rate6h > (6 * 0.005)
+            and
+            demo:error_ratio:rate30m > (6 * 0.005)
+          for: 15m
+          labels:
+            severity: ticket
+          annotations:
+            summary: "Slow error-budget burn on demo (6x)"
+            description: "A steady drip that will exhaust the budget by month end."
