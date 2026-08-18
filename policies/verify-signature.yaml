@@ -1,0 +1,25 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signature
+spec:
+  validationFailureAction: Audit
+  webhookTimeoutSeconds: 30       # signature verification hits the network
+  rules:
+    - name: verify-demo-signature
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [default]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/YOU/demo*"
+          attestors:
+            - entries:
+                - keyless:
+                    # This must match your workflow's OIDC identity EXACTLY
+                    subject: "https://github.com/YOU/platform/.github/workflows/build.yaml@refs/heads/main"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev
