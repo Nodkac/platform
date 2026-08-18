@@ -3,7 +3,7 @@ kind: ClusterPolicy
 metadata:
   name: require-non-root
 spec:
-  validationFailureAction: Enforce     # flip to Enforce after verifying
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: run-as-non-root
