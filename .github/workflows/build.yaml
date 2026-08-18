@@ -15,7 +15,10 @@ permissions:
   id-token: write    # REQUIRED for cosign keyless signing (the OIDC token)
 
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/demo
+  # GHCR requires lowercase repository names (OCI spec), but the GitHub
+  # username is "Nodkac" — so hardcode the lowercase form rather than
+  # using ${{ github.repository_owner }} verbatim.
+  IMAGE: ghcr.io/nodkac/demo
 
 jobs:
   build:
