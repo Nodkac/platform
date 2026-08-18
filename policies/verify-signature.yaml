@@ -3,7 +3,7 @@ kind: ClusterPolicy
 metadata:
   name: verify-image-signature
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   webhookTimeoutSeconds: 30       # signature verification hits the network
   rules:
     - name: verify-demo-signature
@@ -15,6 +15,7 @@ spec:
       verifyImages:
         - imageReferences:
             - "ghcr.io/nodkac/demo*"
+
           attestors:
             - entries:
                 - keyless:
