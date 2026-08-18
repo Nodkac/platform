@@ -14,12 +14,12 @@ spec:
               namespaces: [default]
       verifyImages:
         - imageReferences:
-            - "ghcr.io/YOU/demo*"
+            - "ghcr.io/nodkac/demo*"
           attestors:
             - entries:
                 - keyless:
                     # This must match your workflow's OIDC identity EXACTLY
-                    subject: "https://github.com/YOU/platform/.github/workflows/build.yaml@refs/heads/main"
+                    subject: "https://github.com/Nodkac/platform/.github/workflows/build.yaml@refs/heads/main"
                     issuer: "https://token.actions.githubusercontent.com"
                     rekor:
                       url: https://rekor.sigstore.dev
