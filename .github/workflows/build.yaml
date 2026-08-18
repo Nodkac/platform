@@ -1,0 +1,80 @@
+name: build
+
+# Run on every push to main that touches the app or this workflow file.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/build.yaml"
+
+# Permissions this workflow's token gets. Least privilege — grant only these.
+permissions:
+  contents: read
+  packages: write    # push images to GHCR
+  id-token: write    # REQUIRED for cosign keyless signing (the OIDC token)
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/demo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Test
+        working-directory: app
+        run: |
+          test -z "$(gofmt -l .)" || (echo "run gofmt"; exit 1)
+          go vet ./...
+          go test ./...
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        id: push                     # named so later steps can read its digest output
+        uses: docker/build-push-action@v6
+        with:
+          context: app
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          severity: CRITICAL
+          exit-code: "1"             # fail the build if any CRITICAL is found
+          ignore-unfixed: true       # don't block on CVEs with no available fix
+    
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign the image (keyless)
+        run: cosign sign --yes ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+
+
+      - name: Update image tag in the GitOps repo
+        run: |
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/${{ github.repository_owner }}/platform-gitops.git
+          cd platform-gitops
+          yq -i '.spec.source.helm.parameters = [
+            {"name": "image.repository", "value": "${{ env.IMAGE }}"},
+            {"name": "image.tag", "value": "${{ github.sha }}"}
+          ]' apps/demo.yaml
+          git config user.name  "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git commit -am "demo: deploy ${{ github.sha }}"
+          git push
