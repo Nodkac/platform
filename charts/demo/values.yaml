@@ -36,6 +36,9 @@ securityContext:
   capabilities:
     drop: ["ALL"]
 
+ingress:
+  enabled: true      # off locally; the EKS Application turns it on
+
 podAnnotations: {}
 nodeSelector: {}
 tolerations: []
