@@ -11,7 +11,7 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
 
   vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.public_subnets
+  subnet_ids = module.vpc.private_subnets
 
   eks_managed_node_groups = {
     default = {
@@ -22,8 +22,8 @@ module "eks" {
       max_size     = 3
       desired_size = 2
 
-      # Public subnets require nodes to have public IPs to reach the internet.
-      subnet_ids = module.vpc.public_subnets
+      # Nodes live in private subnets — no public IPs. Egress via NAT gateway.
+      subnet_ids = module.vpc.private_subnets
     }
   }
 }
